@@ -220,7 +220,7 @@ const IDX_SENDIRI = FRAMES.length - 1;
 const SENDIRI = FRAMES[IDX_SENDIRI];
 
 /* =====================================================
-   BAGIAN 4: SUSUN BINGKAI (Teks Lebih Estetik)
+   BAGIAN 4: SUSUN BINGKAI (Teks Lebih Esteti)
    ===================================================== */
 function susun(daftarFoto) {
   const L = B.layout;
