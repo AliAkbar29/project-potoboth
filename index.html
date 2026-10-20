@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Klik Klik Booth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="top">
+    <div class="logo">Klik<br>Booth</div>
+    <h1>POTO ALI</h1>
+  </header>
+
+  <main class="app">
+
+    <!-- ===== KIRI: kamera, pengaturan, pilihan bingkai ===== -->
+    <section class="kiri">
+
+      <!-- Kamera -->
+      <div class="stage">
+        <video id="vid" playsinline muted></video>
+        <p class="ph" id="ph">Kamera belum menyala. Klik “Nyalakan kamera” lalu izinkan akses di browser.</p>
+        <div class="cd" id="cd" aria-live="assertive"></div>
+        <div class="flash" id="flash"></div>
+      </div>
+
+      <!-- Tombol + pesan -->
+      <div class="bar">
+        <button class="go" id="cam">Nyalakan kamera</button>
+        <button class="go lime" id="shoot" disabled>Mulai foto</button>
+        <span class="bmsg" id="bmsg" role="status">Tekan Spasi untuk mulai foto.</span>
+      </div>
+
+      <!-- Pengaturan kecil -->
+      <div class="set">
+        <label>Tata letak
+          <select data-k="layout">
+            <option value="strip">Strip 4 foto</option>
+            <option value="grid">Grid 2×2</option>
+            <option value="single">1 foto</option>
+          </select>
+        </label>
+        <label>Filter
+          <select data-k="filter">
+            <option value="none">Normal</option>
+            <option value="bw">Hitam putih</option>
+            <option value="sepia">Sepia</option>
+            <option value="warm">Hangat</option>
+          </select>
+        </label>
+        <label>Hitung mundur
+          <select data-k="secs">
+            <option value="2">2 detik</option>
+            <option value="3" selected>3 detik</option>
+            <option value="5">5 detik</option>
+          </select>
+        </label>
+        <label class="lebar">Teks di bingkai
+          <input id="judul" type="text" maxlength="40" value="Klik Klik Booth">
+        </label>
+      </div>
+
+      <!-- Pilihan bingkai -->
+      <div class="pilih">
+        <div class="baris">
+          <h3>Pilih bingkai</h3>
+          <div class="mini">
+            <button class="opt" id="btnStiker">+ Stiker foto</button>
+            <button class="opt" id="btnOverlay">+ Bingkai PNG</button>
+            <button class="opt" id="btnReset">Hapus</button>
+            <input id="warnaLatar" class="warna" type="color" value="#ffd1e3" aria-label="Warna latar Punyaku">
+          </div>
+        </div>
+        <div class="frames" id="frames"></div>
+        <input id="upStiker" type="file" accept="image/*" multiple hidden>
+        <input id="upOverlay" type="file" accept="image/png" hidden>
+      </div>
+    </section>
+
+    <!-- ===== KANAN: contoh bingkai = hasil akhir ===== -->
+    <aside class="kanan">
+      <p class="cap" id="pvCap"></p>
+      <div class="kotak">
+        <img id="pvImg" alt="Contoh dan hasil bingkai">
+      </div>
+      <div class="acts" id="acts" hidden>
+        <button class="go lime" id="dl">Unduh</button>
+        <button class="go ghost" id="prt">Cetak</button>
+        <button class="go ghost" id="again">Ulang</button>
+      </div>
+    </aside>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

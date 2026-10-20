@@ -1,0 +1,412 @@
+/* ===== Warna ===== */
+:root {
+  --bg:     #23262e;
+  --dark:   #2d323c;
+  --dark2:  #434955;
+  --coral:  #e58c84;
+  --purple: #4a35b0;
+  --lime:   #b7d96c;
+  --mute:   #a0a4ae;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+/* Satu layar penuh, tidak bisa digulir di laptop */
+body {
+  background: var(--bg);
+  color: #fff;
+  font-family: Poppins, system-ui, sans-serif;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+/* ===== Header ===== */
+.top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+.logo {
+  border: 1px solid #fff;
+  padding: 3px 7px;
+  font-size: 9px;
+  line-height: 1.1;
+  font-weight: 600;
+}
+
+.top h1 {
+  font-size: 20px;
+}
+
+/* ===== Area utama: kiri (lebar) + kanan (kotak tinggi) ===== */
+.app {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(230px, 26vw, 330px);
+  gap: 16px;
+  background: var(--dark);
+  border-radius: 24px;
+  padding: 16px;
+}
+
+/* ===== Kolom kiri ===== */
+.kiri {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+/* Kamera: tinggi mengikuti layar */
+.stage {
+  position: relative;
+  height: 42vh;
+  aspect-ratio: 4 / 3;
+  max-width: 100%;
+  margin: 0 auto;
+  background: #1d2027;
+  border-radius: 18px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.stage video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);   /* efek cermin */
+}
+
+.ph {
+  font-size: 12px;
+  color: var(--mute);
+  padding: 16px;
+  text-align: center;
+  max-width: 260px;
+}
+
+.ph[hidden] {
+  display: none;
+}
+
+/* Angka hitung mundur */
+.cd {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(80px, 14vw, 150px);
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, .5);
+}
+
+.cd.on {
+  opacity: 1;
+}
+
+/* Efek flash */
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s;
+}
+
+.flash.on {
+  opacity: .95;
+}
+
+/* ===== Tombol + pesan ===== */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.bmsg {
+  font-size: 12px;
+  color: var(--lime);
+  flex: 1 1 200px;
+}
+
+.go {
+  background: var(--purple);
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 20px;
+  font: 500 13px Poppins, sans-serif;
+  cursor: pointer;
+}
+
+.go.lime {
+  background: var(--lime);
+  color: #23262e;
+}
+
+.go.ghost {
+  background: var(--dark2);
+}
+
+.go[disabled] {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* ===== Pengaturan kecil ===== */
+.set {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.set label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--mute);
+}
+
+.set .lebar {
+  flex: 1 1 160px;
+}
+
+.set select,
+.set input {
+  background: var(--dark2);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: 500 12px Poppins, sans-serif;
+  width: 100%;
+}
+
+/* ===== Pilihan bingkai ===== */
+.pilih {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.baris {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+h3 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mute);
+}
+
+.mini {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.opt {
+  background: var(--dark2);
+  color: #fff;
+  border: 0;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font: 500 11px Poppins, sans-serif;
+  cursor: pointer;
+}
+
+.warna {
+  width: 30px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* Kotak-kotak bingkai, bisa digulir kalau banyak */
+.frames {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px;
+  align-content: start;
+  padding: 3px;
+}
+
+.fr {
+  background: none;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  font: 500 10px Poppins, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+}
+
+.pv {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  border: 3px solid transparent;
+}
+
+.fr[aria-pressed="true"] .pv {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px var(--coral);
+}
+
+/* Garis fokus saat pakai keyboard */
+.go:focus-visible,
+.opt:focus-visible,
+.fr:focus-visible,
+.set select:focus-visible,
+.set input:focus-visible,
+.warna:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+
+/* ===== Kolom kanan: contoh = hasil ===== */
+.kanan {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cap {
+  font-size: 11px;
+  color: var(--mute);
+  text-align: center;
+}
+
+.kotak {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  background: var(--bg);
+  border-radius: 16px;
+  padding: 10px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.kotak img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 215px);
+  border-radius: 4px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .4);
+}
+
+.acts {
+  display: flex;
+  gap: 8px;
+}
+
+.acts[hidden] {
+  display: none;
+}
+
+.acts .go {
+  padding: 10px 14px;
+  font-size: 12px;
+}
+
+/* ===== Layar kecil (HP / tablet): boleh digulir ===== */
+@media (max-width: 900px) {
+  html,
+  body {
+    height: auto;
+  }
+
+  body {
+    overflow: auto;
+  }
+
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .stage {
+    height: auto;
+    width: 100%;
+  }
+
+  .kotak img {
+    max-height: 70vh;
+  }
+}
+
+/* ===== Cetak: hanya gambar hasil ===== */
+@media print {
+  body {
+    background: #fff;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .top,
+  .kiri,
+  .cap,
+  .acts {
+    display: none !important;
+  }
+
+  .app,
+  .kotak {
+    background: #fff;
+    padding: 0;
+    display: block;
+  }
+
+  .kotak img {
+    max-height: none;
+    width: 100%;
+    box-shadow: none;
+  }
+}
