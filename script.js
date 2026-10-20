@@ -7,14 +7,15 @@ const B = {
   layout: 'strip',
   filter: 'none',
   secs: 3,
-  frame: 0,        // nomor bingkai di daftar FRAMES
-  shots: [],       // foto yang sudah diambil
+  frame: 0,        
+  shots: [],       
   busy: false,
-  cv: null         // gambar hasil lengkap (kalau semua foto sudah diambil)
+  cv: null         
 };
 
-const N = { strip: 4, grid: 4, single: 1 };
-const NAMA_LAYOUT = { strip: 'Strip 4 foto', grid: 'Grid 2×2', single: '1 foto' };
+// Ubah default menjadi 3 foto (Strip 3) agar pas dengan desain bingkai
+const N = { strip: 3, grid: 4, single: 1 };
+const NAMA_LAYOUT = { strip: 'Strip 3 foto', grid: 'Grid 2×2', single: '1 foto' };
 
 const FIL = {
   none:  'none',
@@ -33,126 +34,11 @@ const bm   = $('bmsg');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const EF = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
 
+// Helper fungsi dasar
+const solid = c => (x, W, H) => { x.fillStyle = c; x.fillRect(0, 0, W, H); };
 
-/* =====================================================
-   BAGIAN 2: POLA LATAR BINGKAI
-   ===================================================== */
-const solid = c => (x, W, H) => {
-  x.fillStyle = c;
-  x.fillRect(0, 0, W, H);
-};
-
-const gradient = (a, b) => (x, W, H) => {
-  const g = x.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, a);
-  g.addColorStop(1, b);
-  x.fillStyle = g;
-  x.fillRect(0, 0, W, H);
-};
-
-const dots = (base, dot, gap = 36, r = 7) => (x, W, H) => {
-  solid(base)(x, W, H);
-  x.fillStyle = dot;
-  for (let j = 0, row = 0; j < H + gap; j += gap, row++) {
-    for (let i = (row % 2) * gap / 2; i < W + gap; i += gap) {
-      x.beginPath();
-      x.arc(i, j, r, 0, Math.PI * 2);
-      x.fill();
-    }
-  }
-};
-
-const stripes = (colors, w = 40) => (x, W, H) => {
-  for (let i = 0, k = 0; i < W; i += w, k++) {
-    x.fillStyle = colors[k % colors.length];
-    x.fillRect(i, 0, w, H);
-  }
-};
-
-const checker = (a, b, s = 40) => (x, W, H) => {
-  for (let j = 0; j * s < H; j++) {
-    for (let i = 0; i * s < W; i++) {
-      x.fillStyle = (i + j) % 2 ? a : b;
-      x.fillRect(i * s, j * s, s, s);
-    }
-  }
-};
-
-const gingham = (c, s = 36) => (x, W, H) => {
-  solid('#fff')(x, W, H);
-  x.fillStyle = c;
-  x.globalAlpha = 0.5;
-  for (let i = 0; i < W; i += s * 2) x.fillRect(i, 0, s, H);
-  for (let j = 0; j < H; j += s * 2) x.fillRect(0, j, W, s);
-  x.globalAlpha = 1;
-};
-
-
-/* =====================================================
-   BAGIAN 3: DAFTAR BINGKAI
-   name = nama | icon = emoji tombol | prev = warna tombol
-   bg = pola latar | emo = hiasan (emoji teks atau foto Image)
-   overlay = PNG yang ditumpuk di atas (khusus Punyaku)
-   "Punyaku" harus tetap paling akhir.
-   ===================================================== */
-const FRAMES = [
-  { name: 'Permen', icon: '🍭', prev: '#ffc2d9',
-    bg: dots('#ffd1e3', '#ffffff'), emo: ['🍭', '🍬', '🧁'] },
-
-  { name: 'Pelangi', icon: '🌈',
-    prev: 'linear-gradient(90deg,#ffb3ba,#ffdfba,#baffc9,#bae1ff)',
-    bg: stripes(['#ffb3ba', '#ffdfba', '#fdffba', '#baffc9', '#bae1ff', '#d7baff'], 44),
-    emo: ['🌈', '☁️', '⭐'] },
-
-  { name: 'Cinta', icon: '💖', prev: '#ff8fb1',
-    bg: gradient('#ffb3cc', '#ff7aa2'), emo: ['💖', '💕', '💗', '💘'] },
-
-  { name: 'Galaksi', icon: '🌙', prev: 'linear-gradient(#1b1f4b,#3b2a78)',
-    bg: gradient('#141840', '#3b2a78'), emo: ['⭐', '✨', '🌙', '🪐'] },
-
-  { name: 'Piknik', icon: '🍓',
-    prev: 'repeating-linear-gradient(45deg,#ff9a9a 0 6px,#fff 6px 12px)',
-    bg: gingham('#e63946'), emo: ['🍓', '🍒', '🧺'] },
-
-  { name: 'Taman', icon: '🌸', prev: '#cfe8a0',
-    bg: dots('#d6edab', '#bfe08a', 44, 10), emo: ['🌸', '🌼', '🌷', '🦋'] },
-
-  { name: 'Meong', icon: '🐱', prev: '#ffe6c7',
-    bg: dots('#fff0dc', '#ffd9a8', 40, 8), emo: ['🐱', '🐾', '🐟', '🧶'] },
-
-  { name: 'Retro', icon: '👾',
-    prev: 'linear-gradient(135deg,#4a35b0 50%,#7a63e0 50%)',
-    bg: checker('#4a35b0', '#6a52d6', 44), emo: ['👾', '🕹️', '💾', '⚡'] },
-
-  { name: 'Ceria', icon: '😄', prev: '#ffe066',
-    bg: dots('#ffe066', '#ffd23f', 44, 11), emo: ['😄', '🌻', '🎈', '😎'] },
-
-  { name: 'Pantai', icon: '🐠', prev: 'linear-gradient(#8fd3ff,#ffe9b0)',
-    bg: gradient('#8fd3ff', '#ffe9b0'), emo: ['🐠', '🐚', '🌊', '🏖️', '🦀'] },
-
-  { name: 'Pesta', icon: '🎉', prev: '#ffd6a5',
-    bg: stripes(['#ffd6a5', '#fff1d6'], 34), emo: ['🎉', '🎈', '🎂', '🎁'] },
-
-  { name: 'Polaroid', icon: '🖼️', prev: '#ffffff',
-    bg: solid('#ffffff'), emo: [] },
-
-  { name: 'Polos', icon: '⬛', prev: '#2d323c',
-    bg: solid('#2d323c'), emo: [] },
-
-  { name: 'Punyaku', icon: '📷', prev: '#ffd1e3',
-    bg: solid('#ffd1e3'), emo: [], overlay: null }
-];
-
-const IDX_SENDIRI = FRAMES.length - 1;
-const SENDIRI = FRAMES[IDX_SENDIRI];
-
-
-/* =====================================================
-   BAGIAN 4: ALAT GAMBAR
-   ===================================================== */
 function rr(x, px, py, w, h, r) {
-  x.beginPath();
-  x.moveTo(px + r, py);
+  x.beginPath(); x.moveTo(px + r, py);
   x.arcTo(px + w, py, px + w, py + h, r);
   x.arcTo(px + w, py + h, px, py + h, r);
   x.arcTo(px, py + h, px, py, r);
@@ -160,209 +46,237 @@ function rr(x, px, py, w, h, r) {
   x.closePath();
 }
 
-// Satu hiasan di titik (0,0): emoji atau fotomu
-function hias(x, item, size) {
-  if (typeof item === 'string') {
-    x.font = size + 'px ' + EF;
-    x.fillText(item, 0, 0);
-  } else {
-    const s = size * 1.8;
-    const r = item.width / item.height;
-    const w = r >= 1 ? s : s * r;
-    const h = r >= 1 ? s / r : s;
-    x.drawImage(item, -w / 2, -h / 2, w, h);
+/* =====================================================
+   BAGIAN 2: DESAIN BINGKAI (PERSIS SEPERTI GAMBAR)
+   ===================================================== */
+const FRAMES = [
+  {
+    name: 'Biru Kotak', icon: '🧊', prev: '#b3cde0', layout: 'strip',
+    drawBg: (x, W, H) => {
+      // Latar putih
+      solid('#fff')(x, W, H);
+      // Pola kotak-kotak biru
+      x.fillStyle = '#b3cde0';
+      const s = 30;
+      for(let i=0; i<W; i+=s*2) x.fillRect(i, 0, s, H);
+      for(let j=0; j<H; j+=s*2) x.fillRect(0, j, W, s);
+      // Gambar pita biru (kiri atas)
+      x.fillStyle = '#6a9bc3';
+      x.beginPath(); x.moveTo(20, 80); x.lineTo(60, 110); x.lineTo(20, 140); x.fill();
+      // Gambar bunga (kanan atas)
+      x.font = '60px ' + EF; x.fillText('🌸', W-80, 80);
+    }
+  },
+  {
+    name: 'Classical', icon: '🎻', prev: '#5c1a1b', layout: 'strip',
+    drawBg: (x, W, H) => {
+      // Latar merah gelap
+      solid('#3d0b0b')(x, W, H);
+      // Border luar
+      x.strokeStyle = '#8b1a1a'; x.lineWidth = 15;
+      x.strokeRect(15, 15, W-30, H-30);
+      // Judul Classical
+      x.fillStyle = '#fff'; x.font = 'italic 80px serif'; x.textAlign = 'center';
+      x.fillText('Classical', W/2, 100);
+      x.font = '30px serif'; x.fillText('music', W/2 - 60, 60);
+      // Barcode
+      x.fillStyle = '#111'; x.fillRect(W/2 - 100, H - 80, 200, 40);
+      x.fillStyle = '#fff'; x.font = '15px monospace'; x.fillText('08/06/2026', W/2, H - 20);
+    }
+  },
+  {
+    name: 'Love Sulus', icon: '❤️', prev: '#c03c3c', layout: 'strip', isHeart: true,
+    drawBg: (x, W, H) => {
+      // Latar merah hati
+      solid('#b32d2d')(x, W, H);
+      // Teks di bawah
+      x.fillStyle = '#fff'; x.font = 'bold 70px serif'; x.textAlign = 'center';
+      x.fillText('777', W/2, H - 80);
+      x.font = 'italic 70px serif'; x.fillText('SULUS', W/2, H - 20);
+    }
+  },
+  {
+    name: 'Bear Coklat', icon: '🧸', prev: '#f2d7d5', layout: 'strip',
+    drawBg: (x, W, H) => {
+      // Latar kotak coklat muda
+      solid('#f4e8d3')(x, W, H);
+      x.fillStyle = '#d1bca3';
+      const s = 30;
+      for(let i=0; i<W; i+=s*2) x.fillRect(i, 0, s, H);
+      for(let j=0; j<H; j+=s*2) x.fillRect(0, j, W, s);
+      // Stiker
+      x.font = '80px ' + EF;
+      x.fillText('🧸', 50, 150);
+      x.fillText('🐻', W-100, 150);
+      x.fillText('📷', 50, H/2);
+      x.fillText('⭐', W-100, H-100);
+    }
+  },
+  {
+    name: 'Gingham Merah', icon: '🎀', prev: '#c03c3c', layout: 'strip',
+    drawBg: (x, W, H) => {
+      // Latar kotak merah
+      solid('#fff')(x, W, H);
+      x.fillStyle = '#b32d2d';
+      const s = 30;
+      for(let i=0; i<W; i+=s*2) x.fillRect(i, 0, s, H);
+      for(let j=0; j<H; j+=s*2) x.fillRect(0, j, W, s);
+      // Pita di kiri
+      x.fillStyle = '#8b1a1a'; x.beginPath(); x.arc(50, H/2, 40, 0, Math.PI*2); x.fill();
+      // Bintang di kanan
+      x.fillStyle = '#8b1a1a'; x.font = '80px ' + EF; x.fillText('🌟', W-100, H/2 + 20);
+    }
+  },
+  {
+    name: 'Leopard Film', icon: '🐆', prev: '#e6b8c4', layout: 'strip',
+    drawBg: (x, W, H) => {
+      // Latar Leopard Pink
+      solid('#e6b8c4')(x, W, H);
+      x.fillStyle = '#4a1a24';
+      for(let i=0; i<80; i++) {
+        let cx = Math.random()*W, cy = Math.random()*H, r = Math.random()*10+5;
+        x.beginPath(); x.arc(cx, cy, r, 0, Math.PI*2); x.fill();
+      }
+      // Bingkai Film Hitam
+      x.fillStyle = '#0a0a0a'; x.fillRect(40, 30, W-80, H-60);
+      x.fillStyle = '#222';
+      x.fillRect(40, H/3 - 10, W-80, 20); x.fillRect(40, 2*H/3 - 10, W-80, 20);
+      // Tulisan Film
+      x.fillStyle = '#ffdb58'; x.font = 'bold 12px sans-serif'; x.textAlign = 'center';
+      for(let i=0; i<10; i++) {
+        x.fillText('▼', 55, 60 + i*80); x.fillText('►', W-55, 60 + i*80);
+        x.save(); x.translate(70, 40 + i*70); x.rotate(Math.PI/2); x.fillText('MADE 400UC', 0, 0); x.restore();
+      }
+    }
+  },
+  { 
+    name: 'Punyaku', icon: '📷', prev: '#ffd1e3', layout: 'strip',
+    bg: solid('#ffd1e3'), emo: [], overlay: null 
   }
-}
+];
 
-// Foto kosong sebagai tempat foto yang belum diambil
-const KOSONG = {};
-function fotoKosong(nomor) {
-  if (KOSONG[nomor]) return KOSONG[nomor];
-
-  const c = document.createElement('canvas');
-  c.width = 800;
-  c.height = 600;
-  const x = c.getContext('2d');
-
-  const g = x.createLinearGradient(0, 0, 0, 600);
-  g.addColorStop(0, '#e3e8f2');
-  g.addColorStop(1, '#b9c1d4');
-  x.fillStyle = g;
-  x.fillRect(0, 0, 800, 600);
-
-  x.textAlign = 'center';
-  x.textBaseline = 'middle';
-  x.font = '190px ' + EF;
-  x.fillText('🙂', 400, 260);
-
-  x.fillStyle = '#6b7285';
-  x.font = '700 48px Poppins, system-ui, sans-serif';
-  x.fillText('Foto ' + nomor, 400, 480);
-
-  KOSONG[nomor] = c;
-  return c;
-}
-
+const IDX_SENDIRI = FRAMES.length - 1;
+const SENDIRI = FRAMES[IDX_SENDIRI];
 
 /* =====================================================
-   BAGIAN 5: SUSUN BINGKAI LENGKAP
+   BAGIAN 3: SUSUN BINGKAI (DINAMIS)
    ===================================================== */
 function susun(daftarFoto) {
   const L = B.layout;
   const f = FRAMES[B.frame];
 
-  const P = 48;     // jarak tepi ke foto
-  const G = 26;     // jarak antar foto
-  const F = 120;    // tinggi footer
+  // Pengaturan ukuran dinamis berdasarkan layout
+  let P = 48, G = 26, F = 100;
+  let pw = 520;
+  let ph = pw * 0.75;
+  let cols = 1;
+  let rows = N[L];
 
-  const pw   = (L === 'single') ? 760 : (L === 'grid') ? 380 : 520;
-  const ph   = pw * 0.75;
-  const cols = (L === 'grid') ? 2 : 1;
-  const rows = (L === 'strip') ? 4 : (L === 'grid') ? 2 : 1;
+  if (L === 'grid') { cols = 2; rows = 2; pw = 380; ph = pw * 0.75; }
+  if (L === 'single') { cols = 1; rows = 1; pw = 760; ph = pw * 0.75; }
 
+  // Hitung ukuran kanvas
   const W = P * 2 + cols * pw + (cols - 1) * G;
   const H = P + rows * ph + (rows - 1) * G + F;
 
   const c = document.createElement('canvas');
-  c.width = W;
-  c.height = H;
+  c.width = W; c.height = H;
   const x = c.getContext('2d');
 
-  // 1) Latar
-  f.bg(x, W, H);
+  // 1. Gambar Latar Belakang Bingkai
+  if (f.drawBg) f.drawBg(x, W, H);
+  else if (f.bg) f.bg(x, W, H);
 
-  // 2) Taburan hiasan
-  if (f.emo.length) {
-    let seed = 7;
-    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-
-    x.textAlign = 'center';
-    x.textBaseline = 'middle';
-
-    const adaFoto = f.emo.some(e => typeof e !== 'string');
-    const step = adaFoto ? 110 : 64;
-
-    let n = 0;
-    for (let j = step / 2; j < H; j += step) {
-      for (let i = step / 2; i < W; i += step) {
-        x.save();
-        x.translate(i + (rnd() - .5) * 18, j + (rnd() - .5) * 18);
-        x.rotate((rnd() - .5) * .8);
-        hias(x, f.emo[n++ % f.emo.length], 26 + rnd() * 14);
-        x.restore();
-      }
-    }
-  }
-
-  // 3) Foto dengan pinggiran putih membulat
-  const pos = [];
+  // 2. Gambar Foto (dengan gaya khusus jika Heart)
   daftarFoto.slice(0, N[L]).forEach((foto, i) => {
     const px = P + (i % cols) * (pw + G);
     const py = P + Math.floor(i / cols) * (ph + G);
-    pos.push([px, py]);
 
     x.save();
-    x.shadowColor = 'rgba(0,0,0,.25)';
-    x.shadowBlur = 14;
-    x.shadowOffsetY = 4;
-    x.fillStyle = '#fff';
-    rr(x, px - 9, py - 9, pw + 18, ph + 18, 18);
-    x.fill();
-    x.restore();
-
-    x.save();
-    rr(x, px, py, pw, ph, 10);
-    x.clip();
+    // Jika bingkai Love Sulus, gunakan bentuk Hati (Clipping Path)
+    if (f.isHeart) {
+      x.beginPath();
+      x.moveTo(px + pw/2, py + ph/4);
+      x.bezierCurveTo(px + pw/2, py, px, py, px, py + ph/4);
+      x.bezierCurveTo(px, py + ph/2, px + pw/2, py + ph, px + pw/2, py + ph);
+      x.bezierCurveTo(px + pw/2, py + ph, px + pw, py + ph/2, px + pw, py + ph/4);
+      x.bezierCurveTo(px + pw, py, px + pw/2, py, px + pw/2, py + ph/4);
+      x.closePath();
+      x.clip();
+    } else {
+      // Bentuk kotak standar untuk bingkai lain
+      rr(x, px, py, pw, ph, 6);
+      x.clip();
+    }
+    
+    // Gambar fotonya
     x.drawImage(foto, px, py, pw, ph);
     x.restore();
   });
 
-  // 4) Stiker di pojok setiap foto
-  if (f.emo.length) {
-    x.textAlign = 'center';
-    x.textBaseline = 'middle';
+  // 3. Gambar Overlay (Jika pake gambar custom dari user)
+  if (f.overlay) x.drawImage(f.overlay, 0, 0, W, H);
 
-    pos.forEach(([px, py], i) => {
-      const kiri = (i % 2 === 0);
-      x.save();
-      x.translate(kiri ? px + 6 : px + pw - 6, py + 6);
-      x.rotate(kiri ? -0.25 : 0.25);
-      hias(x, f.emo[i % f.emo.length], 58);
-      x.restore();
-    });
-  }
-
-  // 5) Bingkai PNG buatanmu
-  if (f.overlay) {
-    x.drawImage(f.overlay, 0, 0, W, H);
-  }
-
-  // 6) Footer: teks dan tanggal
+  // 4. Teks Bawah
   const judul = $('judul').value.trim() || 'Klik Klik Booth';
-  const tanggal = new Date().toLocaleDateString('id-ID', {
-    day: 'numeric', month: 'long', year: 'numeric'
-  });
+  const tanggal = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
   let u = 32;
   const font = () => '700 ' + u + 'px Poppins, system-ui, sans-serif';
   x.font = font();
-  while (x.measureText(judul).width > W - P * 2 - 60 && u > 16) {
-    u -= 2;
-    x.font = font();
-  }
-
+  while (x.measureText(judul).width > W - P * 2 - 60 && u > 16) { u -= 2; x.font = font(); }
+  
   const lebarPapan = Math.max(x.measureText(judul).width, 200) + 60;
   const cy = H - F / 2 + 6;
 
   x.save();
-  x.globalAlpha = 0.9;
-  x.fillStyle = '#fff';
-  rr(x, (W - lebarPapan) / 2, cy - 44, lebarPapan, 82, 22);
-  x.fill();
+  x.globalAlpha = 0.9; x.fillStyle = '#fff';
+  rr(x, (W - lebarPapan) / 2, cy - 44, lebarPapan, 82, 22); x.fill();
   x.restore();
 
-  x.textAlign = 'center';
-  x.textBaseline = 'middle';
-  x.fillStyle = '#23262e';
-  x.font = font();
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillStyle = '#23262e'; x.font = font();
   x.fillText(judul, W / 2, cy - 12);
-
-  x.fillStyle = '#6b6f7a';
-  x.font = '400 15px Poppins, system-ui, sans-serif';
+  x.fillStyle = '#6b6f7a'; x.font = '400 15px Poppins, system-ui, sans-serif';
   x.fillText(tanggal, W / 2, cy + 18);
 
   return c;
 }
 
-
 /* =====================================================
-   BAGIAN 6: KOTAK KANAN (contoh sekaligus hasil)
-   Foto yang sudah diambil tampil asli, sisanya foto kosong.
-   Kalau semua foto sudah diambil, tombol Unduh/Cetak muncul.
+   BAGIAN 4: PREVIEW & LOGIKA UI
    ===================================================== */
+const KOSONG = {};
+function fotoKosong(nomor) {
+  if (KOSONG[nomor]) return KOSONG[nomor];
+  const c = document.createElement('canvas');
+  c.width = 800; c.height = 600;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 600);
+  g.addColorStop(0, '#e3e8f2'); g.addColorStop(1, '#b9c1d4');
+  x.fillStyle = g; x.fillRect(0, 0, 800, 600);
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = '190px ' + EF; x.fillText('🙂', 400, 260);
+  x.fillStyle = '#6b7285'; x.font = '700 48px Poppins, sans-serif';
+  x.fillText('Foto ' + nomor, 400, 480);
+  KOSONG[nomor] = c; return c;
+}
+
 function segarPreview() {
   const n = N[B.layout];
   const daftar = [];
-  for (let i = 0; i < n; i++) {
-    daftar.push(B.shots[i] || fotoKosong(i + 1));
-  }
+  for (let i = 0; i < n; i++) daftar.push(B.shots[i] || fotoKosong(i + 1));
+  
+  try {
+    const c = susun(daftar);
+    pv.src = c.toDataURL('image/png');
+    if (B.shots.length >= n) B.cv = c;
+  } catch (e) { console.error(e); }
 
-  const c = susun(daftar);
-  pv.src = c.toDataURL('image/png');
-
-  const lengkap = B.shots.length >= n;
-  if (lengkap) B.cv = c;
-  acts.hidden = !lengkap;
-
-  $('pvCap').textContent = lengkap
-    ? 'Hasil fotomu'
-    : 'Contoh: ' + FRAMES[B.frame].name + ' · ' + NAMA_LAYOUT[B.layout];
+  acts.hidden = B.shots.length < n;
+  $('pvCap').textContent = B.shots.length >= n ? 'Hasil fotomu' : 'Contoh: ' + FRAMES[B.frame].name;
 }
 
-
-/* =====================================================
-   BAGIAN 7: TOMBOL PILIH BINGKAI
-   ===================================================== */
 function pilihBingkai(i) {
   B.frame = i;
   document.querySelectorAll('.fr').forEach((btn, k) => {
@@ -375,240 +289,118 @@ FRAMES.forEach((f, i) => {
   const b = document.createElement('button');
   b.className = 'fr';
   b.setAttribute('aria-pressed', String(i === B.frame));
-  b.innerHTML =
-    '<span class="pv" style="background:' + f.prev + '">' + f.icon + '</span>' +
-    '<span>' + f.name + '</span>';
+  b.innerHTML = '<span class="pv" style="background:' + f.prev + '">' + f.icon + '</span><span>' + f.name + '</span>';
   b.addEventListener('click', () => pilihBingkai(i));
   $('frames').appendChild(b);
 });
 
 $('judul').addEventListener('input', segarPreview);
 
-
 /* =====================================================
-   BAGIAN 8: PENGATURAN (tata letak, filter, hitung mundur)
+   BAGIAN 5: PENGATURAN, KAMERA & AMBIL FOTO
    ===================================================== */
 document.querySelectorAll('select[data-k]').forEach(s => {
   s.addEventListener('change', () => {
     const k = s.dataset.k;
     B[k] = (k === 'secs') ? +s.value : s.value;
-
-    // Filter langsung terlihat di kamera
     if (k === 'filter') vid.style.filter = FIL[B.filter];
-
-    // Ganti tata letak: foto lama dibuang
-    if (k === 'layout') {
-      B.shots = [];
-      segarPreview();
-    }
+    if (k === 'layout') { B.shots = []; segarPreview(); }
   });
 });
 
-
-/* =====================================================
-   BAGIAN 9: KAMERA
-   ===================================================== */
 $('cam').addEventListener('click', async () => {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    bm.textContent = 'Browser ini tidak mendukung akses kamera. Gunakan Chrome atau Edge.';
-    return;
-  }
-
   try {
     vid.srcObject = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
       audio: false
     });
     await vid.play();
-
-    $('ph').hidden = true;
-    $('cam').hidden = true;
-    $('shoot').disabled = false;
-    bm.textContent = 'Kamera siap. Klik Mulai foto atau tekan Spasi.';
-
-  } catch (e) {
-    const n = e && e.name;
-    if (n === 'NotAllowedError') {
-      bm.textContent = 'Izin kamera ditolak. Klik ikon gembok di address bar, izinkan kamera, lalu coba lagi.';
-    } else if (n === 'NotFoundError') {
-      bm.textContent = 'Kamera tidak ditemukan di laptop ini.';
-    } else {
-      bm.textContent = 'Kamera tidak bisa dibuka. Pastikan tidak dipakai aplikasi lain.';
-    }
-  }
+    $('ph').hidden = true; $('cam').hidden = true; $('shoot').disabled = false;
+    bm.textContent = 'Kamera siap. Klik Mulai foto.';
+  } catch (e) { bm.textContent = 'Kamera gagal dibuka.'; }
 });
 
-
-/* =====================================================
-   BAGIAN 10: AMBIL FOTO
-   ===================================================== */
 function ambil() {
-  const w = vid.videoWidth;
-  const h = vid.videoHeight;
-
-  // Potong bagian tengah video jadi rasio 4:3
-  const sw = Math.min(w, h * 4 / 3);
-  const sh = sw * 3 / 4;
-
-  const c = document.createElement('canvas');
-  c.width = 800;
-  c.height = 600;
-
+  const w = vid.videoWidth, h = vid.videoHeight;
+  const sw = Math.min(w, h * 4 / 3), sh = sw * 3 / 4;
+  const c = document.createElement('canvas'); c.width = 800; c.height = 600;
   const x = c.getContext('2d');
   x.filter = FIL[B.filter];
-  x.translate(800, 0);    // balik horizontal biar sama dengan preview
-  x.scale(-1, 1);
+  x.translate(800, 0); x.scale(-1, 1);
   x.drawImage(vid, (w - sw) / 2, (h - sh) / 2, sw, sh, 0, 0, 800, 600);
-
   return c;
 }
 
 async function mulai() {
   if (B.busy || $('shoot').disabled) return;
-
-  B.busy = true;
-  B.shots = [];
-  $('shoot').disabled = true;
-  segarPreview();                     // kotak kanan kembali kosong
-
+  B.busy = true; B.shots = []; $('shoot').disabled = true; segarPreview();
   const n = N[B.layout];
 
   for (let i = 0; i < n; i++) {
     bm.textContent = 'Foto ' + (i + 1) + ' dari ' + n;
-
-    // Hitung mundur
     for (let s = B.secs; s > 0; s--) {
-      cd.textContent = s;
-      cd.classList.add('on');
-      await sleep(1000);
+      cd.textContent = s; cd.classList.add('on'); await sleep(1000);
     }
     cd.classList.remove('on');
-
-    // Flash + ambil foto, lalu langsung tampil di kotak kanan
-    fl.classList.add('on');
-    B.shots.push(ambil());
-    segarPreview();
-    await sleep(180);
-    fl.classList.remove('on');
-    await sleep(600);
+    fl.classList.add('on'); B.shots.push(ambil()); segarPreview();
+    await sleep(180); fl.classList.remove('on'); await sleep(600);
   }
-
   bm.textContent = 'Selesai! Hasilmu ada di kotak kanan.';
-  B.busy = false;
-  $('shoot').disabled = false;
+  B.busy = false; $('shoot').disabled = false;
 }
 
 $('shoot').addEventListener('click', mulai);
-
-// Tombol Spasi = mulai foto
 document.addEventListener('keydown', e => {
-  const sedangMengetik = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
-  if (e.code === 'Space' && !sedangMengetik) {
-    e.preventDefault();
-    mulai();
+  if (e.code === 'Space' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+    e.preventDefault(); mulai();
   }
 });
 
-
 /* =====================================================
-   BAGIAN 11: TOMBOL HASIL
+   BAGIAN 6: UNDUH & BINGKAI CUSTOM
    ===================================================== */
-$('again').addEventListener('click', () => {
-  B.shots = [];
-  segarPreview();
-  bm.textContent = 'Siap foto lagi.';
-});
-
+$('again').addEventListener('click', () => { B.shots = []; segarPreview(); bm.textContent = 'Siap foto lagi.'; });
 $('prt').addEventListener('click', () => window.print());
-
 $('dl').addEventListener('click', async () => {
   if (!B.cv) return;
-
   const blob = await new Promise(r => B.cv.toBlob(r, 'image/png'));
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'photobooth-' + Date.now() + '.png';
-  a.click();
+  a.href = URL.createObjectURL(blob); a.download = 'photobooth-' + Date.now() + '.png'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 });
 
-
-/* =====================================================
-   BAGIAN 12: BINGKAI DARI FOTOMU SENDIRI
-   ===================================================== */
 function bacaGambar(file) {
   return new Promise((ok, gagal) => {
-    const img = new Image();
-    img.onload = () => ok(img);
-    img.onerror = gagal;
-    img.src = URL.createObjectURL(file);
+    const img = new Image(); img.onload = () => ok(img); img.onerror = gagal; img.src = URL.createObjectURL(file);
   });
 }
+function pvSendiri() { return document.querySelectorAll('.fr')[IDX_SENDIRI].querySelector('.pv'); }
 
-function pvSendiri() {
-  return document.querySelectorAll('.fr')[IDX_SENDIRI].querySelector('.pv');
-}
-
-// Stiker foto
 $('btnStiker').addEventListener('click', () => $('upStiker').click());
-
 $('upStiker').addEventListener('change', async e => {
-  const files = [...e.target.files];
-  if (!files.length) return;
-
-  try {
-    SENDIRI.emo = await Promise.all(files.map(bacaGambar));
-  } catch (err) {
-    bm.textContent = 'Salah satu gambar tidak bisa dibaca. Coba file PNG atau JPG.';
-    return;
-  }
-
-  pvSendiri().textContent = '';
-  pvSendiri().style.background = 'url(' + SENDIRI.emo[0].src + ') center / cover';
-
-  pilihBingkai(IDX_SENDIRI);
-  e.target.value = '';
+  const files = [...e.target.files]; if (!files.length) return;
+  try { SENDIRI.emo = await Promise.all(files.map(bacaGambar)); } catch (err) { return; }
+  pvSendiri().textContent = ''; pvSendiri().style.background = 'url(' + SENDIRI.emo[0].src + ') center / cover';
+  pilihBingkai(IDX_SENDIRI); e.target.value = '';
 });
 
-// Warna latar
 $('warnaLatar').addEventListener('input', e => {
   SENDIRI.bg = solid(e.target.value);
   if (!SENDIRI.emo.length) pvSendiri().style.background = e.target.value;
   pilihBingkai(IDX_SENDIRI);
 });
 
-// Bingkai PNG
 $('btnOverlay').addEventListener('click', () => $('upOverlay').click());
-
 $('upOverlay').addEventListener('change', async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  try {
-    SENDIRI.overlay = await bacaGambar(file);
-  } catch (err) {
-    bm.textContent = 'Gambar bingkai tidak bisa dibaca. Pakai file PNG.';
-    return;
-  }
-
-  pilihBingkai(IDX_SENDIRI);
-  e.target.value = '';
+  const file = e.target.files[0]; if (!file) return;
+  try { SENDIRI.overlay = await bacaGambar(file); } catch (err) { return; }
+  pilihBingkai(IDX_SENDIRI); e.target.value = '';
 });
 
-// Hapus
 $('btnReset').addEventListener('click', () => {
-  SENDIRI.emo = [];
-  SENDIRI.overlay = null;
-  SENDIRI.bg = solid($('warnaLatar').value);
-
-  pvSendiri().textContent = '📷';
-  pvSendiri().style.background = $('warnaLatar').value;
-
+  SENDIRI.emo = []; SENDIRI.overlay = null; SENDIRI.bg = solid($('warnaLatar').value);
+  pvSendiri().textContent = '📷'; pvSendiri().style.background = $('warnaLatar').value;
   pilihBingkai(IDX_SENDIRI);
 });
 
-
-/* =====================================================
-   BAGIAN 13: TAMPILKAN CONTOH PERTAMA KALI
-   ===================================================== */
 segarPreview();
