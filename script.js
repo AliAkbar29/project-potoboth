@@ -3,6 +3,9 @@
    ===================================================== */
 const $ = id => document.getElementById(id);
 
+// PEMAKSA CACHE: Menambahkan penanda waktu agar browser tidak menyimpan versi lama
+const CACHE_BUSTER = Date.now(); 
+
 const B = {
   layout: 'strip',
   filter: 'none',
@@ -13,15 +16,18 @@ const B = {
   cv: null         
 };
 
-// Ubah default menjadi 3 foto (Strip 3) agar pas dengan desain bingkai
 const N = { strip: 3, grid: 4, single: 1 };
 const NAMA_LAYOUT = { strip: 'Strip 3 foto', grid: 'Grid 2×2', single: '1 foto' };
 
+// Daftar Filter yang sudah diperluas
 const FIL = {
-  none:  'none',
-  bw:    'grayscale(1) contrast(1.1)',
-  sepia: 'sepia(.8) contrast(1.05)',
-  warm:  'saturate(1.4) hue-rotate(-12deg) brightness(1.05)'
+  none:    'none',
+  bw:      'bw',
+  sepia:   'sepia',
+  warm:    'warm',
+  vintage: 'vintage', // Filter Baru
+  cool:    'cool',    // Filter Baru
+  fade:    'fade'     // Filter Baru
 };
 
 const vid  = $('vid');
@@ -34,7 +40,6 @@ const bm   = $('bmsg');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const EF = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
 
-// Helper fungsi dasar
 const solid = c => (x, W, H) => { x.fillStyle = c; x.fillRect(0, 0, W, H); };
 
 function rr(x, px, py, w, h, r) {
@@ -47,49 +52,113 @@ function rr(x, px, py, w, h, r) {
 }
 
 /* =====================================================
-   BAGIAN 2: DESAIN BINGKAI (PERSIS SEPERTI GAMBAR)
+   BAGIAN 2: FUNGSI FILTER MANUAL (COMPATIBLE HP)
+   ===================================================== */
+function applyFilter(canvas, filterName) {
+  if (filterName === 'none') return canvas;
+
+  const ctx = canvas.getContext('2d');
+  
+  // Ambil data pixel
+  let imgData;
+  try {
+    imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  } catch (e) {
+    console.error("Gagal membaca pixel (CORS issue):", e);
+    return canvas; // Kembalikan gambar asli jika gagal
+  }
+  
+  const data = imgData.data;
+
+  for (let i = 0; i < data.length; i += 4) {
+    let r = data[i];
+    let g = data[i + 1];
+    let b = data[i + 2];
+
+    switch (filterName) {
+      case 'bw':
+        // Hitam Putih
+        let gray = (r * 0.299) + (g * 0.587) + (b * 0.114);
+        data[i] = data[i+1] = data[i+2] = gray;
+        break;
+
+      case 'sepia':
+        data[i]     = (r * 0.393) + (g * 0.769) + (b * 0.189);
+        data[i + 1] = (r * 0.349) + (g * 0.686) + (b * 0.168);
+        data[i + 2] = (r * 0.272) + (g * 0.534) + (b * 0.131);
+        break;
+
+      case 'warm':
+        data[i]     = r * 1.2;        
+        data[i + 1] = g * 1.05;       
+        data[i + 2] = b * 0.8;        
+        break;
+
+      case 'vintage':
+        // Efek Retro/Kuning Kecoklatan
+        data[i]     = (r * 0.9) + (g * 0.5) + (b * 0.1);
+        data[i + 1] = (r * 0.3) + (g * 0.8) + (b * 0.2);
+        data[i + 2] = (r * 0.1) + (g * 0.4) + (b * 0.6);
+        break;
+
+      case 'cool':
+        // Efek Dingin (Biru/Teal)
+        data[i]     = r * 0.8;
+        data[i + 1] = g * 1.0;
+        data[i + 2] = b * 1.3;
+        break;
+
+      case 'fade':
+        // Efek Pudar (Kontras rendah, warna keabu-abuan)
+        data[i]     = (r * 0.7) + 40;
+        data[i + 1] = (g * 0.7) + 40;
+        data[i + 2] = (b * 0.7) + 40;
+        break;
+    }
+
+    // Pastikan nilai tetap di antara 0 - 255
+    data[i]     = Math.min(255, Math.max(0, data[i]));
+    data[i + 1] = Math.min(255, Math.max(0, data[i + 1]));
+    data[i + 2] = Math.min(255, Math.max(0, data[i + 2]));
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  return canvas;
+}
+
+/* =====================================================
+   BAGIAN 3: DESAIN BINGKAI
    ===================================================== */
 const FRAMES = [
   {
     name: 'Biru Kotak', icon: '🧊', prev: '#b3cde0', layout: 'strip',
     drawBg: (x, W, H) => {
-      // Latar putih
       solid('#fff')(x, W, H);
-      // Pola kotak-kotak biru
       x.fillStyle = '#b3cde0';
       const s = 30;
       for(let i=0; i<W; i+=s*2) x.fillRect(i, 0, s, H);
       for(let j=0; j<H; j+=s*2) x.fillRect(0, j, W, s);
-      // Gambar pita biru (kiri atas)
       x.fillStyle = '#6a9bc3';
       x.beginPath(); x.moveTo(20, 80); x.lineTo(60, 110); x.lineTo(20, 140); x.fill();
-      // Gambar bunga (kanan atas)
       x.font = '60px ' + EF; x.fillText('🌸', W-80, 80);
     }
   },
   {
     name: 'Classical', icon: '🎻', prev: '#5c1a1b', layout: 'strip',
     drawBg: (x, W, H) => {
-      // Latar merah gelap
       solid('#3d0b0b')(x, W, H);
-      // Border luar
       x.strokeStyle = '#8b1a1a'; x.lineWidth = 15;
       x.strokeRect(15, 15, W-30, H-30);
-      // Judul Classical
       x.fillStyle = '#fff'; x.font = 'italic 80px serif'; x.textAlign = 'center';
       x.fillText('Classical', W/2, 100);
       x.font = '30px serif'; x.fillText('music', W/2 - 60, 60);
-      // Barcode
       x.fillStyle = '#111'; x.fillRect(W/2 - 100, H - 80, 200, 40);
-      x.fillStyle = '#fff'; x.font = '15px monospace'; x.fillText('08/06/2026', W/2, H - 20);
     }
   },
   {
     name: 'Love Sulus', icon: '❤️', prev: '#c03c3c', layout: 'strip', isHeart: true,
     drawBg: (x, W, H) => {
-      // Latar merah hati
       solid('#b32d2d')(x, W, H);
-      // Teks di bawah
       x.fillStyle = '#fff'; x.font = 'bold 70px serif'; x.textAlign = 'center';
       x.fillText('777', W/2, H - 80);
       x.font = 'italic 70px serif'; x.fillText('SULUS', W/2, H - 20);
@@ -98,13 +167,11 @@ const FRAMES = [
   {
     name: 'Bear Coklat', icon: '🧸', prev: '#f2d7d5', layout: 'strip',
     drawBg: (x, W, H) => {
-      // Latar kotak coklat muda
       solid('#f4e8d3')(x, W, H);
       x.fillStyle = '#d1bca3';
       const s = 30;
       for(let i=0; i<W; i+=s*2) x.fillRect(i, 0, s, H);
       for(let j=0; j<H; j+=s*2) x.fillRect(0, j, W, s);
-      // Stiker
       x.font = '80px ' + EF;
       x.fillText('🧸', 50, 150);
       x.fillText('🐻', W-100, 150);
@@ -115,33 +182,27 @@ const FRAMES = [
   {
     name: 'Gingham Merah', icon: '🎀', prev: '#c03c3c', layout: 'strip',
     drawBg: (x, W, H) => {
-      // Latar kotak merah
       solid('#fff')(x, W, H);
       x.fillStyle = '#b32d2d';
       const s = 30;
       for(let i=0; i<W; i+=s*2) x.fillRect(i, 0, s, H);
       for(let j=0; j<H; j+=s*2) x.fillRect(0, j, W, s);
-      // Pita di kiri
       x.fillStyle = '#8b1a1a'; x.beginPath(); x.arc(50, H/2, 40, 0, Math.PI*2); x.fill();
-      // Bintang di kanan
       x.fillStyle = '#8b1a1a'; x.font = '80px ' + EF; x.fillText('🌟', W-100, H/2 + 20);
     }
   },
   {
     name: 'Leopard Film', icon: '🐆', prev: '#e6b8c4', layout: 'strip',
     drawBg: (x, W, H) => {
-      // Latar Leopard Pink
       solid('#e6b8c4')(x, W, H);
       x.fillStyle = '#4a1a24';
       for(let i=0; i<80; i++) {
         let cx = Math.random()*W, cy = Math.random()*H, r = Math.random()*10+5;
         x.beginPath(); x.arc(cx, cy, r, 0, Math.PI*2); x.fill();
       }
-      // Bingkai Film Hitam
       x.fillStyle = '#0a0a0a'; x.fillRect(40, 30, W-80, H-60);
       x.fillStyle = '#222';
-      x.fillRect(40, H/3 - 10, W-80, 20); x.fillRect(40, 2*H/3 - 10, W-80, 20);
-      // Tulisan Film
+      x.fillRect(40, H/10 - 10, W-80, 20); x.fillRect(40, 2*H/3 - 10, W-80, 20);
       x.fillStyle = '#ffdb58'; x.font = 'bold 12px sans-serif'; x.textAlign = 'center';
       for(let i=0; i<10; i++) {
         x.fillText('▼', 55, 60 + i*80); x.fillText('►', W-55, 60 + i*80);
@@ -159,14 +220,13 @@ const IDX_SENDIRI = FRAMES.length - 1;
 const SENDIRI = FRAMES[IDX_SENDIRI];
 
 /* =====================================================
-   BAGIAN 3: SUSUN BINGKAI (DINAMIS)
+   BAGIAN 4: SUSUN BINGKAI (Teks Lebih Estetik)
    ===================================================== */
 function susun(daftarFoto) {
   const L = B.layout;
   const f = FRAMES[B.frame];
 
-  // Pengaturan ukuran dinamis berdasarkan layout
-  let P = 48, G = 26, F = 100;
+  let P = 48, G = 26, F = 120; // F (Footer) ditambah sedikit agar lega
   let pw = 520;
   let ph = pw * 0.75;
   let cols = 1;
@@ -175,7 +235,6 @@ function susun(daftarFoto) {
   if (L === 'grid') { cols = 2; rows = 2; pw = 380; ph = pw * 0.75; }
   if (L === 'single') { cols = 1; rows = 1; pw = 760; ph = pw * 0.75; }
 
-  // Hitung ukuran kanvas
   const W = P * 2 + cols * pw + (cols - 1) * G;
   const H = P + rows * ph + (rows - 1) * G + F;
 
@@ -183,17 +242,14 @@ function susun(daftarFoto) {
   c.width = W; c.height = H;
   const x = c.getContext('2d');
 
-  // 1. Gambar Latar Belakang Bingkai
   if (f.drawBg) f.drawBg(x, W, H);
   else if (f.bg) f.bg(x, W, H);
 
-  // 2. Gambar Foto (dengan gaya khusus jika Heart)
   daftarFoto.slice(0, N[L]).forEach((foto, i) => {
     const px = P + (i % cols) * (pw + G);
     const py = P + Math.floor(i / cols) * (ph + G);
 
     x.save();
-    // Jika bingkai Love Sulus, gunakan bentuk Hati (Clipping Path)
     if (f.isHeart) {
       x.beginPath();
       x.moveTo(px + pw/2, py + ph/4);
@@ -204,47 +260,78 @@ function susun(daftarFoto) {
       x.closePath();
       x.clip();
     } else {
-      // Bentuk kotak standar untuk bingkai lain
       rr(x, px, py, pw, ph, 6);
       x.clip();
     }
-    
-    // Gambar fotonya
     x.drawImage(foto, px, py, pw, ph);
     x.restore();
   });
 
-  // 3. Gambar Overlay (Jika pake gambar custom dari user)
   if (f.overlay) x.drawImage(f.overlay, 0, 0, W, H);
 
-  // 4. Teks Bawah
-  const judul = $('judul').value.trim() || 'Klik Klik Booth';
+  // ==========================================
+  // 5. TEKS BAWAH (GAYA BARU YANG ESTETIK)
+  // ==========================================
+  const judul = $('judul').value.trim() || 'Photobooth era';
   const tanggal = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  let u = 32;
-  const font = () => '700 ' + u + 'px Poppins, system-ui, sans-serif';
-  x.font = font();
-  while (x.measureText(judul).width > W - P * 2 - 60 && u > 16) { u -= 2; x.font = font(); }
+  // Warna teks menyesuaikan warna bingkai (jika background gelap, teks jadi putih)
+  // Kita gunakan warna kontras yang aman: Putih dengan bayangan, atau Abu Gelap
+  const isDarkBg = ['Classical', 'Leopard Film'].includes(f.name);
+  const textColor = isDarkBg ? '#ffffff' : '#000000';
+  const subTextColor = isDarkBg ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+
+  // Atur ukuran font secara dinamis
+  let u = 34;
+  const fontTitle = () => `italic 700 ${u}px "Playfair Display", Georgia, serif`; // Font elegan
+  x.font = fontTitle();
   
-  const lebarPapan = Math.max(x.measureText(judul).width, 200) + 60;
-  const cy = H - F / 2 + 6;
+  // Kecilkan font jika teks terlalu panjang
+  while (x.measureText(judul).width > W - 100 && u > 16) { 
+    u -= 2; 
+    x.font = fontTitle(); 
+  }
 
-  x.save();
-  x.globalAlpha = 0.9; x.fillStyle = '#fff';
-  rr(x, (W - lebarPapan) / 2, cy - 44, lebarPapan, 82, 22); x.fill();
-  x.restore();
+  const cy = H - (F / 1.3) + 10; // Posisi vertikal teks
 
-  x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.fillStyle = '#23262e'; x.font = font();
-  x.fillText(judul, W / 2, cy - 12);
-  x.fillStyle = '#6b6f7a'; x.font = '400 15px Poppins, system-ui, sans-serif';
-  x.fillText(tanggal, W / 2, cy + 18);
+  // Efek Bayangan Halus (Drop Shadow) agar tulisan terbaca tanpa kotak
+  x.shadowColor = isDarkBg ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)';
+  x.shadowBlur = 8;
+  x.shadowOffsetY = 2;
+
+  x.textAlign = 'center'; 
+  x.textBaseline = 'middle';
+
+  // Gambar Judul Utama
+  x.fillStyle = textColor;
+  x.font = fontTitle();
+  x.fillText(judul, W / 2, cy - 10);
+
+  // Gambar Tanggal (Lebih kecil dan tipis)
+  x.shadowBlur = 4; // Bayangan lebih tipis untuk tanggal
+  x.fillStyle = subTextColor;
+  x.font = `500 14px "Poppins", system-ui, sans-serif`;
+  x.fillText(tanggal.toUpperCase(), W / 2, cy + 24);
+
+  // Garis aksen dekoratif kecil di atas dan bawah teks
+  x.shadowBlur = 0; // Matikan bayangan untuk garis
+  x.strokeStyle = textColor;
+  x.lineWidth = 1.5;
+  x.globalAlpha = 0.5;
+  
+  const textWidth = x.measureText(judul).width;
+  const lineW = Math.min(textWidth + 40, W - 80); // Panjang garis menyesuaikan teks
+  
+  x.beginPath(); x.moveTo((W - lineW)/2, cy - 35); x.lineTo((W + lineW)/2, cy - 35); x.stroke();
+  x.beginPath(); x.moveTo((W - lineW)/2, cy + 45); x.lineTo((W + lineW)/2, cy + 45); x.stroke();
+  
+  x.globalAlpha = 1; // Kembalikan ke normal
 
   return c;
 }
 
 /* =====================================================
-   BAGIAN 4: PREVIEW & LOGIKA UI
+   BAGIAN 5: PREVIEW & LOGIKA UI
    ===================================================== */
 const KOSONG = {};
 function fotoKosong(nomor) {
@@ -297,13 +384,22 @@ FRAMES.forEach((f, i) => {
 $('judul').addEventListener('input', segarPreview);
 
 /* =====================================================
-   BAGIAN 5: PENGATURAN, KAMERA & AMBIL FOTO
+   BAGIAN 6: PENGATURAN, KAMERA & AMBIL FOTO
    ===================================================== */
 document.querySelectorAll('select[data-k]').forEach(s => {
   s.addEventListener('change', () => {
     const k = s.dataset.k;
     B[k] = (k === 'secs') ? +s.value : s.value;
-    if (k === 'filter') vid.style.filter = FIL[B.filter];
+    
+    if (k === 'filter') {
+      const cssFilter = {
+        none: 'none', bw: 'grayscale(1)', sepia: 'sepia(1)', 
+        warm: 'sepia(0.3) saturate(1.5)', vintage: 'sepia(0.6) hue-rotate(-20deg)', 
+        cool: 'hue-rotate(180deg) saturate(1.2)', fade: 'opacity(0.8) contrast(0.8)'
+      };
+      vid.style.filter = cssFilter[B.filter] || 'none';
+    }
+    
     if (k === 'layout') { B.shots = []; segarPreview(); }
   });
 });
@@ -323,12 +419,17 @@ $('cam').addEventListener('click', async () => {
 function ambil() {
   const w = vid.videoWidth, h = vid.videoHeight;
   const sw = Math.min(w, h * 4 / 3), sh = sw * 3 / 4;
-  const c = document.createElement('canvas'); c.width = 800; c.height = 600;
-  const x = c.getContext('2d');
-  x.filter = FIL[B.filter];
+  
+  const tempCanvas = document.createElement('canvas'); 
+  tempCanvas.width = 800; 
+  tempCanvas.height = 600;
+  const x = tempCanvas.getContext('2d');
+  
   x.translate(800, 0); x.scale(-1, 1);
   x.drawImage(vid, (w - sw) / 2, (h - sh) / 2, sw, sh, 0, 0, 800, 600);
-  return c;
+  
+  // Terapkan filter manual
+  return applyFilter(tempCanvas, B.filter);
 }
 
 async function mulai() {
@@ -342,7 +443,9 @@ async function mulai() {
       cd.textContent = s; cd.classList.add('on'); await sleep(1000);
     }
     cd.classList.remove('on');
-    fl.classList.add('on'); B.shots.push(ambil()); segarPreview();
+    fl.classList.add('on'); 
+    B.shots.push(ambil()); 
+    segarPreview();
     await sleep(180); fl.classList.remove('on'); await sleep(600);
   }
   bm.textContent = 'Selesai! Hasilmu ada di kotak kanan.';
@@ -357,7 +460,7 @@ document.addEventListener('keydown', e => {
 });
 
 /* =====================================================
-   BAGIAN 6: UNDUH & BINGKAI CUSTOM
+   BAGIAN 7: UNDUH & BINGKAI CUSTOM
    ===================================================== */
 $('again').addEventListener('click', () => { B.shots = []; segarPreview(); bm.textContent = 'Siap foto lagi.'; });
 $('prt').addEventListener('click', () => window.print());
